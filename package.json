@@ -1,0 +1,13 @@
+{
+  "name": "codeguard-ai",
+  "version": "1.0.0",
+  "description": "AI-Powered Code Review and Bug Detection System",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "test:backend": "cd backend && .venv\\Scripts\\python -m pytest"
+  },
+  "keywords": ["code-review", "ai", "fastapi", "react", "monaco", "ast", "security-audit"],
+  "author": "CodeGuard Team",
+  "license": "MIT"
+}
