@@ -1,7 +1,23 @@
 import axios, { AxiosError } from 'axios';
 
-// Use 127.0.0.1 to avoid Windows IPv6 (::1) localhost resolution discrepancy
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
+// Normalize VITE_API_URL so any of https://api.com, https://api.com/, or https://api.com/api/v1 works seamlessly
+const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+
+const resolveApiBaseUrl = (): string => {
+  if (!rawApiUrl) {
+    return 'http://127.0.0.1:8000/api/v1';
+  }
+  const cleanUrl = rawApiUrl.replace(/\/+$/, '');
+  if (cleanUrl.endsWith('/api/v1')) {
+    return cleanUrl;
+  }
+  if (cleanUrl.endsWith('/api')) {
+    return `${cleanUrl}/v1`;
+  }
+  return `${cleanUrl}/api/v1`;
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

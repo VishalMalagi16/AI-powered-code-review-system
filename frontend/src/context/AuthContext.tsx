@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { authApi } from '@/services/api/auth';
+import { API_BASE_URL } from '@/services/api/client';
 import { useToast } from './ToastContext';
 
 interface AuthContextType {
@@ -49,9 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(resp.user);
       success(`Welcome back, ${resp.user.name}!`, 'Signed In');
     } catch (err: any) {
+      const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
       const msg = err.response?.data?.detail 
         || (err.code === 'ERR_NETWORK' || !err.response 
-            ? 'Cannot connect to backend server. Please verify the FastAPI backend is running on http://127.0.0.1:8000.' 
+            ? (isCloud 
+                ? `Cannot connect to backend server at ${API_BASE_URL}. In Vercel, please set VITE_API_URL to your deployed backend URL (e.g. Render/Railway).` 
+                : 'Cannot connect to backend server. Please verify the FastAPI backend is running on http://127.0.0.1:8000.') 
             : 'Authentication failed. Please check credentials.');
       toastError(msg, 'Login Error');
       throw err;
@@ -69,9 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(resp.user);
       success('Account created successfully!', 'Registration Complete');
     } catch (err: any) {
+      const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
       const msg = err.response?.data?.detail 
         || (err.code === 'ERR_NETWORK' || !err.response 
-            ? 'Cannot connect to backend server. Please verify the FastAPI backend is running on http://127.0.0.1:8000.' 
+            ? (isCloud 
+                ? `Cannot connect to backend server at ${API_BASE_URL}. In Vercel, please set VITE_API_URL to your deployed backend URL (e.g. Render/Railway).` 
+                : 'Cannot connect to backend server. Please verify the FastAPI backend is running on http://127.0.0.1:8000.') 
             : 'Registration failed.');
       toastError(msg, 'Registration Error');
       throw err;
@@ -83,16 +90,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authApi.logout();
+    } catch {
+      // Ignore network errors on logout
     } finally {
       localStorage.removeItem('codeguard_token');
       localStorage.removeItem('codeguard_user');
       setUser(null);
-      success('You have been logged out securely.', 'Signed Out');
+      success('You have been signed out.', 'Signed Out');
     }
   };
 
   const updateUser = (updated: Partial<User>) => {
-    setUser((prev) => (prev ? { ...prev, ...updated } : null));
+    if (user) {
+      const newUser = { ...user, ...updated };
+      setUser(newUser);
+      localStorage.setItem('codeguard_user', JSON.stringify(newUser));
+    }
   };
 
   return (
