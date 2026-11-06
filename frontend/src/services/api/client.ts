@@ -3,9 +3,16 @@ import axios, { AxiosError } from 'axios';
 // Normalize VITE_API_URL so any of https://api.com, https://api.com/, or https://api.com/api/v1 works seamlessly
 const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
 
+const isBrowser = typeof window !== 'undefined';
+export const isCloudDeployment = isBrowser && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
+// If no custom backend URL is provided and we are running in the cloud (e.g. Vercel),
+// client-only mode runs entirely in the browser using the clientEngine without needing an external server.
+export const isClientOnlyMode = !rawApiUrl && isCloudDeployment;
+
 const resolveApiBaseUrl = (): string => {
   if (!rawApiUrl) {
-    return 'http://127.0.0.1:8000/api/v1';
+    return isCloudDeployment ? '/api/v1' : 'http://127.0.0.1:8000/api/v1';
   }
   const cleanUrl = rawApiUrl.replace(/\/+$/, '');
   if (cleanUrl.endsWith('/api/v1')) {
@@ -24,7 +31,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 45000,
+  timeout: 30000,
 });
 
 // Request Interceptor: Attach JWT Bearer Token if present
